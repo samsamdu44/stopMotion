@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>test</title>
+	<meta charset="utf-8">
+</head>
+<body>
+	<a id="link"></a>
+	<br>FPS du timelapse : <input type="text" id="fps" value="1">
+	<input type="file" id="fileToUpload" multiple>
+	<br><br><video id="video" autoplay loop controls width="400px" height="250px"></video>
+	<br><input type="button" id="stop-motion" onclick="play()" value="Génerer la vidéo"></input>
+	<script src="whammy.js"></script>
+	<script>
+	let lnk = document.getElementById("link");
+	
+	let canvas = document.createElement("canvas");
+	let ctx = canvas.getContext("2d");
+	
+	document.body.append(canvas);
+	
+	let video = document.getElementById("video");
+	let fps;
+	let k = 0;
+	let dataUrlArr = [];
+	let dataUrlArrWebp = [];
+	let reader;
+	let files;
+	let file;
+	let dataUrl = document.getElementById("fileToUpload");
+
+	dataUrl.addEventListener("change", function(e) {
+		files = e.target.files;
+		for(let i=0; i < files.length; i++) {
+			file = files[i];
+			reader = new FileReader();
+			reader.addEventListener("load", function(e) {
+				let picFile = e.target;
+				dataUrlArr.push(picFile.result);
+				console.log(dataUrlArr);
+			});
+			reader.readAsDataURL(file);
+		}
+	});
+
+	function play() {
+		fps = parseFloat(document.getElementById("fps").value);
+		int = setInterval(() => {
+			if (k < dataUrlArr.length) {
+				let img = new Image;
+				img.onload = () => {
+					canvas.height = img.height;
+					canvas.width = img.width;
+					ctx.drawImage(img, 0, 0);
+					dataUrlArrWebp.push(canvas.toDataURL("image/webp"));
+				}
+				img.src = dataUrlArr[k];
+			}
+
+			else {
+				makeVideo();
+			}
+
+			k+=1;
+		}, 100);
+	}
+
+	function makeVideo() {
+		clearInterval(int);
+		console.log(dataUrlArrWebp);
+		let output = Whammy.fromImageArray(dataUrlArrWebp, fps);
+		console.log(output);
+		let url = webkitURL.createObjectURL(output);
+		lnk.innerText = "Télécharger la vidéo";
+		lnk.href = url;
+		lnk.download = "file.webm";
+		video.src = url;
+	}
+</script>
+</html>
